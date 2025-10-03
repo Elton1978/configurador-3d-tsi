@@ -1,0 +1,114 @@
+.App {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Estilos para componentes Three.js */
+.viewport-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.viewport-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.viewport-overlay > * {
+  pointer-events: auto;
+}
+
+/* Estilos para sidebar */
+.sidebar-transition {
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+/* Estilos para cards de propostas */
+.proposal-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.proposal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.proposal-card.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Estilos para controles 3D */
+.control-button {
+  @apply bg-white border border-gray-300 rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-200;
+}
+
+.control-button:hover {
+  @apply bg-gray-50 border-gray-400;
+}
+
+.control-button.active {
+  @apply bg-blue-500 text-white border-blue-500;
+}
+
+/* Estilos para loading */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para tooltips */
+.tooltip {
+  @apply absolute bg-gray-900 text-white text-xs rounded py-1 px-2 pointer-events-none z-50;
+  transform: translateX(-50%);
+}
+
+/* Estilos para medições */
+.measurement-line {
+  stroke: #ff6b6b;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+}
+
+.measurement-text {
+  fill: #ff6b6b;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .sidebar-container {
+    position: absolute;
+    z-index: 20;
+  }
+  
+  .viewport-container {
+    width: 100%;
+  }
+}

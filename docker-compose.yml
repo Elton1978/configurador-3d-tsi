@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: configurador_postgres
+    environment:
+      POSTGRES_DB: configurador_tsi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./api/database.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./api/seeds:/docker-entrypoint-initdb.d/seeds
+    networks:
+      - configurador_network
+
+  # Redis para cache e jobs
+  redis:
+    image: redis:7-alpine
+    container_name: configurador_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - configurador_network
+
+  # Backend FastAPI
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: configurador_api
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/configurador_tsi
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+      - ./static:/app/static
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - configurador_network
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend React (desenvolvimento)
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: configurador_web
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - configurador_network
+    command: pnpm run dev --host
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  configurador_network:
+    driver: bridge
