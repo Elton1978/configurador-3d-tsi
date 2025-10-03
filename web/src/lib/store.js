@@ -49,6 +49,18 @@ const useStore = create(
       selectedProposal: null,
       setSelectedProposal: (proposal) => set({ selectedProposal: proposal }),
 
+      // Configurações de produtos
+      configurations: {},
+      setConfigurations: (configurations) => set({ configurations }),
+
+      // Preços calculados
+      pricing: {},
+      setPricing: (pricing) => set({ pricing }),
+
+      // BOM (Bill of Materials)
+      bom: {},
+      setBOM: (bom) => set({ bom }),
+
       // Estado da UI
       ui: {
         sidebarOpen: true,
@@ -108,6 +120,127 @@ const useStore = create(
         } finally {
           set((state) => ({ ui: { ...state.ui, loading: false } }))
         }
+      },
+
+      // Ações para configuração de produtos
+      configureProduct: async (variantId, options = {}) => {
+        const variant = get().blockCatalog.variants.find(v => v.id === variantId)
+        if (!variant) return
+
+        try {
+          const { default: configurationEngine } = await import('./configurationEngine')
+          const configuration = configurationEngine.configureProduct(variant, options)
+          
+          set((state) => ({
+            configurations: {
+              ...state.configurations,
+              [variantId]: configuration
+            }
+          }))
+
+          return configuration
+        } catch (error) {
+          console.error('Erro ao configurar produto:', error)
+          set((state) => ({ ui: { ...state.ui, error: error.message } }))
+        }
+      },
+
+      // Ações para cálculo de preços
+      calculatePrice: async (items, context = {}) => {
+        try {
+          const { default: pricingEngine } = await import('./pricingEngine')
+          const pricing = Array.isArray(items) 
+            ? pricingEngine.calculateProjectPrice(items, context)
+            : pricingEngine.calculateItemPrice(items, context)
+          
+          set((state) => ({
+            pricing: {
+              ...state.pricing,
+              [context.projectId || 'current']: pricing
+            }
+          }))
+
+          return pricing
+        } catch (error) {
+          console.error('Erro ao calcular preço:', error)
+          set((state) => ({ ui: { ...state.ui, error: error.message } }))
+        }
+      },
+
+      // Gerar proposta usando o sistema interno
+      generateProposal: async (projectId, options = {}) => {
+        const project = get().currentProject
+        if (!project) return
+
+        try {
+          const { default: proposalGenerator } = await import('./proposalGenerator')
+          const proposal = proposalGenerator.generateProposal(project, options)
+          
+          set((state) => ({
+            proposals: [...state.proposals, proposal]
+          }))
+
+          return proposal
+        } catch (error) {
+          console.error('Erro ao gerar proposta:', error)
+          set((state) => ({ ui: { ...state.ui, error: error.message } }))
+        }
+      },
+
+      // Gerar BOM (Bill of Materials)
+      generateBOM: (projectId) => {
+        const project = get().currentProject
+        if (!project || !project.blocks) return
+
+        const bom = {
+          projectId,
+          generatedAt: new Date().toISOString(),
+          items: [],
+          summary: {
+            totalItems: 0,
+            totalWeight: 0,
+            totalValue: 0,
+            families: {}
+          }
+        }
+
+        project.blocks.forEach((block, index) => {
+          const item = {
+            position: index + 1,
+            tag: block.tag || `EQ-${String(index + 1).padStart(3, '0')}`,
+            description: block.variant.name,
+            family: block.variant.family_name,
+            model: block.variant.model || 'Standard',
+            quantity: 1,
+            unitPrice: block.variant.price || 0,
+            totalPrice: block.variant.price || 0,
+            weight: block.variant.weight || 0,
+            leadTime: 30, // dias
+            supplier: 'TSI',
+            specifications: block.variant.specifications || {}
+          }
+
+          bom.items.push(item)
+          bom.summary.totalItems++
+          bom.summary.totalWeight += item.weight
+          bom.summary.totalValue += item.totalPrice
+
+          // Agrupar por família
+          if (!bom.summary.families[item.family]) {
+            bom.summary.families[item.family] = { count: 0, value: 0 }
+          }
+          bom.summary.families[item.family].count++
+          bom.summary.families[item.family].value += item.totalPrice
+        })
+
+        set((state) => ({
+          bom: {
+            ...state.bom,
+            [projectId]: bom
+          }
+        }))
+
+        return bom
       },
 
       // Reset do estado
