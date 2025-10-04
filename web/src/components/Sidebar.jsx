@@ -5,6 +5,7 @@ import BarracaoTab from './sidebar/BarracaoTab'
 import BlocksTab from './sidebar/BlocksTab'
 import ProposalsTab from './sidebar/ProposalsTab'
 import BOMTab from './sidebar/BOMTab'
+import AdminTab from './sidebar/AdminTab'
 
 const Sidebar = () => {
   const { ui, setUI } = useStore()
@@ -14,7 +15,8 @@ const Sidebar = () => {
     { id: 'barracao', label: 'Barracão', icon: '🏭' },
     { id: 'blocos', label: 'Blocos', icon: '🧱' },
     { id: 'propostas', label: 'Propostas', icon: '💡' },
-    { id: 'bom', label: 'BOM/Preço', icon: '💰' }
+    { id: 'bom', label: 'BOM/Preço', icon: '💰' },
+    { id: 'admin', label: 'Admin', icon: '⚙️' }
   ]
 
   const renderTabContent = () => {
@@ -29,6 +31,8 @@ const Sidebar = () => {
         return <ProposalsTab />
       case 'bom':
         return <BOMTab />
+      case 'admin':
+        return <AdminTab />
       default:
         return <ProjectTab />
     }

@@ -243,6 +243,16 @@ const useStore = create(
         return bom
       },
 
+      // Ações para administração
+      addCatalogVariant: (variant) => {
+        set(state => ({
+          catalog: {
+            ...state.catalog,
+            variants: [...(state.catalog.variants || []), variant]
+          }
+        }))
+      },
+
       // Reset do estado
       reset: () => set({
         currentProject: null,
